@@ -655,7 +655,10 @@ def rs_find_error_locator(synd, nsym, erase_loc=None, erase_count=0):
     err_loc = list(itertools.dropwhile(lambda x: x == 0, err_loc)) # drop leading 0s, else errs will not be of the correct size
     errs = len(err_loc) - 1
     if (errs-erase_count) * 2 + erase_count > nsym:
-        raise ReedSolomonError("Too many errors to correct")
+        
+        #RSB
+        return None
+        #raise ReedSolomonError("Too many errors to correct")
 
     return err_loc
 
@@ -690,7 +693,9 @@ def rs_find_errors(err_loc, nmess, generator=2):
     # Sanity check: the number of errors/errata positions found should be exactly the same as the length of the errata locator polynomial
     if len(err_pos) != errs:
         # TODO: to decode messages+ecc with length n > 255, we may try to use a bruteforce approach: the correct positions ARE in the final array j, but the problem is because we are above the Galois Field's range, there is a wraparound so that for example if j should be [0, 1, 2, 3], we will also get [255, 256, 257, 258] (because 258 % 255 == 3, same for the other values), so we can't discriminate. The issue is that fixing any errs_nb errors among those will always give a correct output message (in the sense that the syndrome will be all 0), so we may not even be able to check if that's correct or not, so I'm not sure the bruteforce approach may even be possible.
-        raise ReedSolomonError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+        #raise ReedSolomonError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+        #RSB
+        return None
     return err_pos
 
 def rs_forney_syndromes(synd, pos, nmess, generator=2):
@@ -743,10 +748,18 @@ def rs_correct_msg(msg_in, nsym, fcr=0, generator=2, erase_pos=None, only_erasur
         fsynd = rs_forney_syndromes(synd, erase_pos, len(msg_out), generator)
         # compute the error locator polynomial using Berlekamp-Massey
         err_loc = rs_find_error_locator(fsynd, nsym, erase_count=len(erase_pos))
+        
+        #RSB
+        if err_loc == None:
+            return msg_out[:-nsym], msg_out[-nsym:], []
+        
         # locate the message errors using Chien search (or bruteforce search)
         err_pos = rs_find_errors(err_loc[::-1], len(msg_out), generator)
         if err_pos is None:
-            raise ReedSolomonError("Could not locate error")
+            #raise ReedSolomonError("Could not locate error")
+            
+            #RSB
+            return msg_out[:-nsym], msg_out[-nsym:], []
 
     # Find errors values and apply them to correct the message
     # compute errata evaluator and errata magnitude polynomials, then correct errors and erasures
